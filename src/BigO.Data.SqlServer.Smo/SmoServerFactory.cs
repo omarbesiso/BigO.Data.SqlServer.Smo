@@ -1,0 +1,56 @@
+﻿using BigO.Core.Validation;
+using JetBrains.Annotations;
+using Microsoft.Data.SqlClient;
+using Microsoft.SqlServer.Management.Common;
+using Microsoft.SqlServer.Management.Smo;
+
+namespace BigO.Data.SqlServer.Smo;
+
+/// <summary>
+///     Provides utilities for creating <see cref="Microsoft.SqlServer.Management.Smo.Server" /> instances.
+/// </summary>
+[PublicAPI]
+public static class SmoServerFactory
+{
+    /// <summary>
+    ///     Creates a new instance of <see cref="Server" /> using the specified connection string.
+    /// </summary>
+    /// <param name="connectionString">The connection string to be used to connect to the server.</param>
+    /// <returns>A new instance of <see cref="Server" />.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="connectionString" /> is <c>null</c> or white space.</exception>
+    /// <remarks>
+    ///     This method creates a new <see cref="SqlConnection" /> using the specified connection string and
+    ///     then creates a new instance of <see cref="Server" /> using a new instance of <see cref="ServerConnection" />
+    ///     initialized with the new <see cref="SqlConnection" />.
+    /// </remarks>
+    public static Server CreateInstance(string connectionString)
+    {
+        Guard.NotNullOrWhiteSpace(connectionString);
+
+        var connection = new SqlConnection(connectionString);
+        var server = new Server(new ServerConnection(connection));
+        return server;
+    }
+
+    /// <summary>
+    ///     Creates an instance of <see cref="Server" /> using the specified <paramref name="sqlConnection" />.
+    /// </summary>
+    /// <param name="sqlConnection">
+    ///     The <see cref="SqlConnection" /> to be used for creating the <see cref="Server" />
+    ///     instance.
+    /// </param>
+    /// <returns>An instance of <see cref="Server" />.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="sqlConnection" /> is <c>null</c>.</exception>
+    /// <remarks>
+    ///     The <paramref name="sqlConnection" /> must be opened before calling this method.
+    ///     The <see cref="Server" /> instance returned by this method will use the specified <paramref name="sqlConnection" />
+    ///     for all its operations.
+    /// </remarks>
+    public static Server CreateInstance(SqlConnection sqlConnection)
+    {
+        Guard.NotNull(sqlConnection);
+
+        var server = new Server(new ServerConnection(sqlConnection));
+        return server;
+    }
+}
