@@ -138,7 +138,7 @@ public static partial class SmoExtensions
     ///     This method calls the <see cref="SqlTypesConversionExtensions.ToSqlDbType" /> method on the
     ///     <see cref="SqlDataType" /> of the <paramref name="column" />.
     /// </remarks>
-    public static SqlDbType ToSqlDataType(this Column column)
+    public static SqlDbType ToSqlDbType(this Column column)
     {
         return column.DataType.SqlDataType.ToSqlDbType();
     }
