@@ -14,7 +14,7 @@ public static partial class SmoExtensions
     ///     "MS_Description".
     ///     If the name is equal to this string, the method returns <c>true</c>. Otherwise, it returns <c>false</c>.
     /// </remarks>
-    private static bool IsMSDescription(this ExtendedProperty extendedProperty)
+    public static bool IsMSDescription(this ExtendedProperty extendedProperty)
     {
         return extendedProperty.Name.Equals("MS_Description", StringComparison.OrdinalIgnoreCase);
     }
