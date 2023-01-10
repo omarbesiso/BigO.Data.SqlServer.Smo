@@ -94,23 +94,6 @@ public static partial class SmoExtensions
     }
 
     /// <summary>
-    ///     Gets the numeric scale of the column.
-    /// </summary>
-    /// <param name="column">The column to get the numeric scale for.</param>
-    /// <returns>The numeric scale of the column.</returns>
-    /// <exception cref="ArgumentNullException">
-    ///     <paramref name="column" /> is <c>null</c>.
-    /// </exception>
-    /// <remarks>
-    ///     The numeric scale is the number of digits to the right of the decimal point in a number.
-    /// </remarks>
-    public static int Scale(this Column column)
-    {
-        Guard.NotNull(column);
-        return column.DataType.NumericScale;
-    }
-
-    /// <summary>
     ///     Returns a boolean value indicating whether the <paramref name="column" /> has a string data type.
     /// </summary>
     /// <param name="column">The column to check the data type of.</param>
