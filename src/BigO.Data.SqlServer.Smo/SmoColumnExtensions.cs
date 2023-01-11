@@ -1,13 +1,19 @@
 ﻿using System.Data;
+using System.Data.Common;
 using BigO.Core.Extensions;
 using BigO.Core.Validation;
 using BigO.Data.SqlServer.Extensions;
+using JetBrains.Annotations;
 using Microsoft.SqlServer.Management.Smo;
+using Index = Microsoft.SqlServer.Management.Smo.Index;
 
 namespace BigO.Data.SqlServer.Smo;
 
-public static partial class SmoExtensions
+[PublicAPI]
+public static class SmoColumnExtensions
 {
+    private const string MSDescriptionExtendedPropertyName = "MS_Description";
+
     /// <summary>
     ///     Returns the ordinal position of the column within its parent table.
     /// </summary>
@@ -125,27 +131,30 @@ public static partial class SmoExtensions
     /// </remarks>
     public static SqlDbType ToSqlDbType(this Column column)
     {
+        Guard.NotNull(column);
         return column.DataType.SqlDataType.ToSqlDbType();
     }
 
     /// <summary>
     ///     Determines whether the provided <see cref="Column" /> has a description associated with it.
     /// </summary>
-    /// <param name="smoColumn">The <see cref="Column" /> to check for a description.</param>
+    /// <param name="column">The <see cref="Column" /> to check for a description.</param>
     /// <returns>True if the <see cref="Column" /> has a description, false otherwise.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="smoColumn" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="column" /> is <c>null</c>.</exception>
     /// <remarks>
     ///     This method checks the <see cref="Column" />'s extended properties for a property with a name of "MS_Description"
     ///     and returns true if found.
     /// </remarks>
-    public static bool HasDescription(this Column smoColumn)
+    public static bool HasDescription(this Column column)
     {
-        if (smoColumn.ExtendedProperties.Count == 0)
+        Guard.NotNull(column);
+
+        if (column.ExtendedProperties.Count == 0)
         {
             return false;
         }
 
-        var description = smoColumn.ExtendedProperties.Cast<ExtendedProperty>()
+        var description = column.ExtendedProperties.Cast<ExtendedProperty>()
             .FirstOrDefault(e => e.IsMSDescription());
 
         return description != null;
@@ -154,14 +163,16 @@ public static partial class SmoExtensions
     /// <summary>
     ///     Returns the .NET data type string representation of the column.
     /// </summary>
-    /// <param name="smoColumn">The <see cref="Column" /> object to retrieve the data type from.</param>
+    /// <param name="column">The <see cref="Column" /> object to retrieve the data type from.</param>
     /// <returns>A string representation of the column's data type.</returns>
     /// <exception cref="ArgumentNullException">
-    ///     <paramref name="smoColumn" /> is <c>null</c>.
+    ///     <paramref name="column" /> is <c>null</c>.
     /// </exception>
-    public static string NetDataTypeString(this Column smoColumn)
+    public static string NetDataTypeString(this Column column)
     {
-        var output = smoColumn.NetDataType().GetNameOrAlias();
+        Guard.NotNull(column);
+
+        var output = column.NetDataType().GetNameOrAlias();
 
         return output;
     }
@@ -169,25 +180,27 @@ public static partial class SmoExtensions
     /// <summary>
     ///     Extension method that retrieves the .NET data type of a <see cref="Column" /> object.
     /// </summary>
-    /// <param name="smoColumn">
+    /// <param name="column">
     ///     The <see cref="Column" /> object to retrieve the .NET data type from.
-    ///     <paramref name="smoColumn" /> should not be <c>null</c>.
+    ///     <paramref name="column" /> should not be <c>null</c>.
     /// </param>
     /// <returns>
-    ///     A <see cref="Type" /> representing the .NET data type of the <paramref name="smoColumn" /> object.
+    ///     A <see cref="Type" /> representing the .NET data type of the <paramref name="column" /> object.
     /// </returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="smoColumn" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="column" /> is <c>null</c>.</exception>
     /// <remarks>
-    ///     This method uses the <c>Nullable</c> property of the <paramref name="smoColumn" /> to determine if the column is
+    ///     This method uses the <c>Nullable</c> property of the <paramref name="column" /> to determine if the column is
     ///     nullable.
     ///     If it is, it uses the <c>ToSqlDbType().GetDotNetType(true)</c> method to get the .NET data type.
     ///     If it is not, it uses the <c>ToSqlDbType().GetDotNetType()</c> method to get the .NET data type.
     /// </remarks>
-    public static Type NetDataType(this Column smoColumn)
+    public static Type NetDataType(this Column column)
     {
-        var output = smoColumn.Nullable
-            ? smoColumn.ToSqlDbType().GetDotNetType(true)
-            : smoColumn.ToSqlDbType().GetDotNetType();
+        Guard.NotNull(column);
+
+        var output = column.Nullable
+            ? column.ToSqlDbType().GetDotNetType(true)
+            : column.ToSqlDbType().GetDotNetType();
 
         return output;
     }
@@ -195,21 +208,23 @@ public static partial class SmoExtensions
     /// <summary>
     ///     Extension method that checks if a <see cref="Column" /> object's data type is a string.
     /// </summary>
-    /// <param name="smoColumn">
-    ///     The <see cref="Column" /> object to check the data type of. <paramref name="smoColumn" />
+    /// <param name="column">
+    ///     The <see cref="Column" /> object to check the data type of. <paramref name="column" />
     ///     should not be <c>null</c>.
     /// </param>
     /// <returns>
-    ///     A <c>bool</c> value indicating whether the <paramref name="smoColumn" /> object's data type is a string.
+    ///     A <c>bool</c> value indicating whether the <paramref name="column" /> object's data type is a string.
     /// </returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="smoColumn" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="column" /> is <c>null</c>.</exception>
     /// <remarks>
-    ///     This method checks the <c>DataType.IsStringType</c> property of the <paramref name="smoColumn" /> object to
+    ///     This method checks the <c>DataType.IsStringType</c> property of the <paramref name="column" /> object to
     ///     determine if it's data type is a string or not.
     /// </remarks>
-    public static bool IsString(this Column smoColumn)
+    public static bool IsString(this Column column)
     {
-        var output = smoColumn.DataType.IsStringType;
+        Guard.NotNull(column);
+
+        var output = column.DataType.IsStringType;
 
         return output;
     }
@@ -217,46 +232,107 @@ public static partial class SmoExtensions
     /// <summary>
     ///     Determines whether the <see cref="Column" /> is of a numeric data type.
     /// </summary>
-    /// <param name="smoColumn">The <see cref="Column" /> to check.</param>
+    /// <param name="column">The <see cref="Column" /> to check.</param>
     /// <returns>A boolean value indicating whether the <see cref="Column" /> is of a numeric data type.</returns>
     /// <remarks>
     ///     This method uses the <see cref="DataType.IsNumericType" /> property to determine whether the <see cref="Column" />
     ///     is of a numeric data type.
     /// </remarks>
-    public static bool IsNumericType(this Column smoColumn)
+    public static bool IsNumericType(this Column column)
     {
-        var output = smoColumn.DataType.IsNumericType;
+        Guard.NotNull(column);
+
+        var output = column.DataType.IsNumericType;
         return output;
     }
 
     /// <summary>
     ///     Retrieves the numeric precision of a <see cref="Column" /> object.
     /// </summary>
-    /// <param name="smoColumn">The <see cref="Column" /> object whose numeric precision is to be retrieved.</param>
-    /// <returns>The numeric precision of the <paramref name="smoColumn" /> object.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="smoColumn" /> is <c>null</c>.</exception>
+    /// <param name="column">The <see cref="Column" /> object whose numeric precision is to be retrieved.</param>
+    /// <returns>The numeric precision of the <paramref name="column" /> object.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="column" /> is <c>null</c>.</exception>
     /// <remarks>
-    ///     This method uses the DataType property of the <paramref name="smoColumn" /> object to retrieve its numeric
+    ///     This method uses the DataType property of the <paramref name="column" /> object to retrieve its numeric
     ///     precision.
     /// </remarks>
-    public static int NumericPrecision(this Column smoColumn)
+    public static int NumericPrecision(this Column column)
     {
-        var output = smoColumn.DataType.NumericPrecision;
+        Guard.NotNull(column);
+
+        var output = column.DataType.NumericPrecision;
         return output;
     }
 
     /// <summary>
     ///     Retrieves the numeric scale of a <see cref="Column" /> object.
     /// </summary>
-    /// <param name="smoColumn">The <see cref="Column" /> object whose numeric scale is to be retrieved.</param>
-    /// <returns>The numeric scale of the <paramref name="smoColumn" /> object.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="smoColumn" /> is <c>null</c>.</exception>
+    /// <param name="column">The <see cref="Column" /> object whose numeric scale is to be retrieved.</param>
+    /// <returns>The numeric scale of the <paramref name="column" /> object.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="column" /> is <c>null</c>.</exception>
     /// <remarks>
-    ///     This method uses the DataType property of the <paramref name="smoColumn" /> object to retrieve its numeric scale.
+    ///     This method uses the DataType property of the <paramref name="column" /> object to retrieve its numeric scale.
     /// </remarks>
-    public static int NumericScale(this Column smoColumn)
+    public static int NumericScale(this Column column)
     {
-        var output = smoColumn.DataType.NumericScale;
+        Guard.NotNull(column);
+
+        var output = column.DataType.NumericScale;
         return output;
+    }
+
+    /// <summary>
+    ///     Sets the default constraint for a column with the specified value.
+    /// </summary>
+    /// <param name="column">The column to set the default constraint on.</param>
+    /// <param name="defaultValue">The default value for the constraint.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="column" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="defaultValue" /> is <c>null</c> or an empty string.</exception>
+    /// <remarks>
+    ///     If the column already has a default constraint, the method will return without making any changes.
+    ///     The constraint name is generated by concatenating the table name, column name, and "DF_" prefix.
+    /// </remarks>
+    public static void SetDefaultConstraint(this Column column, string defaultValue)
+    {
+        Guard.NotNull(column);
+        
+        if (column.DefaultConstraint != null)
+        {
+            return;
+        }
+
+        var tableName = ((Table)column.Parent).Name;
+        var columnName = column.Name;
+        var constraintName = $"DF_{tableName}_{columnName}";
+        var defaultConstraint = column.AddDefaultConstraint(constraintName);
+        defaultConstraint.Text = defaultValue;
+    }
+
+    /// <summary>
+    /// Adds a description to a column.
+    /// </summary>
+    /// <param name="column">The <see cref="Column"/> to add the description to.</param>
+    /// <param name="description">The description to add to the column.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="column"/> or <paramref name="description"/> is <c>null</c>.</exception>
+    /// <remarks>
+    /// The method will ensure that the description ends with a dot.
+    /// it will create an Extended Property, named "MS_Description" and link it to the column, with the description passed in
+    /// </remarks>
+    public static void AddDescription(this Column column, string description)
+    {        
+        Guard.NotNull(column);
+        
+        var columnDescription = new ExtendedProperty(column, MSDescriptionExtendedPropertyName, description.EnsureEndsWithDot());
+        column.ExtendedProperties.Add(columnDescription);
+    }
+
+    private static string EnsureEndsWithDot(this string str)
+    {
+        if (!str.EndsWith("."))
+        {
+            return str + ".";
+        }
+
+        return str;
     }
 }

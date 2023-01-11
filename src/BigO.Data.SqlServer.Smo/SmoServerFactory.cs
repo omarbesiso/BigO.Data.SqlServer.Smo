@@ -28,7 +28,8 @@ public static class SmoServerFactory
         Guard.NotNullOrWhiteSpace(connectionString);
 
         var connection = new SqlConnection(connectionString);
-        var server = new Server(new ServerConnection(connection));
+        var serverConnection = new ServerConnection(connection);
+        var server = new Server(serverConnection);
         return server;
     }
 
@@ -50,7 +51,33 @@ public static class SmoServerFactory
     {
         Guard.NotNull(sqlConnection);
 
-        var server = new Server(new ServerConnection(sqlConnection));
+        var serverConnection = new ServerConnection(sqlConnection);
+        var server = new Server(serverConnection);
         return server;
+    }
+
+    /// <summary>
+    ///     Creates a new Database object using the provided connection string
+    /// </summary>
+    /// <param name="connectionString">
+    ///     The connection string to use to connect to the database. It must include the Initial
+    ///     Catalog property
+    /// </param>
+    /// <returns>An instance of <see cref="Database" />.</returns>
+    /// <exception cref="SqlException">Thrown if there is an error when connecting to the database</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="connectionString" /> is <c>null</c> or empty</exception>
+    /// <remarks>
+    ///     This method uses the Initial Catalog property of the provided connection string to identify the database to connect
+    ///     to.
+    /// </remarks>
+    public static Database CreateDatabase(string connectionString)
+    {
+        var connection = new SqlConnection(connectionString);
+        var builder = new SqlConnectionStringBuilder(connectionString);
+
+        var serverConnection = new ServerConnection(connection);
+        var sqlServer = new Server(serverConnection);
+
+        return sqlServer.Databases[builder.InitialCatalog];
     }
 }
