@@ -77,6 +77,34 @@ public static class SmoTableExtensions
     }
 
     /// <summary>
+    ///     Determines whether the specified table has a description.
+    /// </summary>
+    /// <param name="table">The table to check for a description.</param>
+    /// <returns>
+    ///     <c>true</c> if the specified table has a description; otherwise, <c>false</c>.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="table" /> is <c>null</c>.
+    /// </exception>
+    /// <remarks>
+    ///     This method checks the ExtendedProperties collection of the specified SMO table for an ExtendedProperty object with
+    ///     the property IsMSDescription set to true. If such an object is found, the method returns true, indicating that the
+    ///     table has a description. If no such object is found, the method returns false.
+    /// </remarks>
+    public static bool HasDescription(this Table table)
+    {
+        if (table.ExtendedProperties.Count == 0)
+        {
+            return false;
+        }
+
+        var description = table.ExtendedProperties.Cast<ExtendedProperty>()
+            .FirstOrDefault(e => e.IsMSDescription());
+
+        return description != null;
+    }
+
+    /// <summary>
     ///     Retrieves a column with a given name from a table.
     /// </summary>
     /// <param name="table">The <see cref="Table" /> to search for the column in.</param>
@@ -124,6 +152,79 @@ public static class SmoTableExtensions
         var index = indexes.FirstOrDefault(i => i.Name.Equals(indexName, StringComparison.OrdinalIgnoreCase));
 
         return index;
+    }
+
+    /// <summary>
+    ///     Returns the primary key columns for the specified table.
+    /// </summary>
+    /// <param name="table">The table to retrieve primary key columns from.</param>
+    /// <returns>
+    ///     A <see cref="List{Column}" /> containing the primary key columns for the specified table.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="table" /> is <c>null</c>.
+    /// </exception>
+    /// <remarks>
+    ///     This method uses LINQ to filter the Columns collection of the specified table for columns where the InPrimaryKey
+    ///     property is set to true. The resulting list of primary key columns is then returned.
+    /// </remarks>
+    public static List<Column> GetPrimaryKeyColumns(this Table table)
+    {
+        var primaryKeys = table.Columns.Cast<Column>().Where(e => e.InPrimaryKey).ToList();
+        return primaryKeys;
+    }
+
+    /// <summary>
+    ///     Returns the names of the primary key columns for the specified SMO table.
+    /// </summary>
+    /// <param name="smoTable">The SMO table to retrieve primary key column names from.</param>
+    /// <returns>
+    ///     A list of strings containing the names of the primary key columns for the specified SMO table.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="smoTable" /> is <c>null</c>.
+    /// </exception>
+    /// <remarks>
+    ///     This method calls the GetPrimaryKeyColumns extension method to retrieve a list of primary key columns for the
+    ///     specified SMO table. It then uses LINQ to select the Name property of each column and return a list of primary key
+    ///     column names.
+    /// </remarks>
+    public static List<string> GetPrimaryKeyColumnNames(this Table smoTable)
+    {
+        var primaryKeyNames = smoTable.GetPrimaryKeyColumns().Select(e => e.Name).ToList();
+        return primaryKeyNames;
+    }
+
+    /// <summary>
+    ///     Returns the indexes for the specified SMO table.
+    /// </summary>
+    /// <param name="smoTable">The SMO table to retrieve indexes from.</param>
+    /// <param name="includePrimaryKeyColumns">
+    ///     A value indicating whether to include primary key indexes in the returned list.
+    ///     The default value is <c>false</c>.
+    /// </param>
+    /// <returns>
+    ///     A <see cref="List{Index}" /> containing the indexes for the specified SMO table.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="smoTable" /> is <c>null</c>.
+    /// </exception>
+    /// <remarks>
+    ///     This method uses LINQ to filter the Indexes collection of the specified SMO table for Index objects where the
+    ///     IsPrimaryKeyIndex property is set to true. If <paramref name="includePrimaryKeyColumns" /> is set to <c>false</c>,
+    ///     primary key indexes are excluded from the returned list. If <paramref name="includePrimaryKeyColumns" /> is set to
+    ///     <c>true</c>, primary key indexes are included in the returned list.
+    /// </remarks>
+    public static List<Index> GetIndexes(this Table smoTable, bool includePrimaryKeyColumns = false)
+    {
+        var indexQuery = smoTable.Indexes.Cast<Index>();
+        if (includePrimaryKeyColumns)
+        {
+            indexQuery = indexQuery.Where(e => !e.IsPrimaryKeyIndex());
+        }
+
+        var indexes = indexQuery.ToList();
+        return indexes;
     }
 
     /// <summary>
