@@ -75,7 +75,8 @@ public static class SmoColumnExtensions
     ///     This method first checks if the <paramref name="column" /> is <c>null</c> and throws an
     ///     <see cref="ArgumentNullException" /> if it is. It then iterates through the column's extended properties
     ///     and checks if any of them are the Microsoft SQL Server-defined description property using the
-    ///     <see cref="SmoExtensions.IsMSDescription" /> method. If a description is found, it is returned. If no
+    ///     <see cref="SmoExtendedPropertyExtensions.IsMSDescription" /> method. If a description is found, it is returned. If
+    ///     no
     ///     description is found, <c>null</c> is returned.
     /// </remarks>
     public static string? Description(this Column column)
@@ -166,11 +167,11 @@ public static class SmoColumnExtensions
     /// <exception cref="ArgumentNullException">
     ///     <paramref name="column" /> is <c>null</c>.
     /// </exception>
-    public static string NetDataTypeString(this Column column)
+    public static string DotNetDataTypeString(this Column column)
     {
         Guard.NotNull(column);
 
-        var output = column.NetDataType().GetNameOrAlias();
+        var output = column.DotNetDataType().GetTypeAsString();
 
         return output;
     }
@@ -192,13 +193,13 @@ public static class SmoColumnExtensions
     ///     If it is, it uses the <c>ToSqlDbType().GetDotNetType(true)</c> method to get the .NET data type.
     ///     If it is not, it uses the <c>ToSqlDbType().GetDotNetType()</c> method to get the .NET data type.
     /// </remarks>
-    public static Type NetDataType(this Column column)
+    public static Type DotNetDataType(this Column column)
     {
         Guard.NotNull(column);
 
         var output = column.Nullable
-            ? column.ToSqlDbType().GetDotNetType(true)
-            : column.ToSqlDbType().GetDotNetType();
+            ? column.ToSqlDbType().AsDotNetType(true)
+            : column.ToSqlDbType().AsDotNetType();
 
         return output;
     }
